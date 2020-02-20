@@ -72,6 +72,7 @@ io.on('connection', (socket) => {
 })
 
 // only run the server after laoding the keys
+const listenOn = process.env.ON || 'localhost'
 Config.loadKeys(() => {
-  server.listen(PORT, 'localhost', () => log.info(`listening on http://localhost:${PORT}`))
+  server.listen(PORT, listenOn, () => log.info(`listening on http://${listenOn}:${PORT}`))
 })

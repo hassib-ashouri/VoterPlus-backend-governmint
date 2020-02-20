@@ -1,7 +1,7 @@
 const log = (...s) => { console.log(...s) }
 const ioClient = require('socket.io-client')
 const blindSigs = require('blind-signatures')
-const crypto = require('crypto')
+const utils = require('../app/utils')
 const Vote = require('../app/Vote').Vote
 const fs = require('fs').promises
 const socket = ioClient('http://localhost:4000')
@@ -22,32 +22,47 @@ socket.on('disconnect', () => {
 })
 
 // these two variables will be part of the global state
-let generatedVotes, voteStrings
+/**
+ * @type {Vote[]}
+ */
+let generatedVotes
+let blindVotesHashes
 socket.on('template_acquisition_response', ({ template, quantity }) => {
   log('Recieved a template from Gov', template)
   log('Producing', quantity, ' Votes')
   generatedVotes = []
-  voteStrings = []
+  blindVotesHashes = []
+  // see how long does it take to gen
+  console.time()
   for (let i = 0; i < quantity; i++) {
-    const tempVote = new Vote(template, '55555555', pubKey.keyPair.e, pubKey.keyPair.n)
-    voteStrings.push(tempVote.toString())
+    const tempVote = new Vote(template, '111111111', pubKey.keyPair.e, pubKey.keyPair.n)
+
     generatedVotes.push(tempVote)
-    log('Made vote', i + 1, ' ', tempVote.toString())
+    blindVotesHashes.push(tempVote.blinded)
   }
-  socket.emit('blind_sig_select', { ssn: '111111111', issue: '3je3', blindVoteHashes: voteStrings })
+  console.timeEnd()
+  socket.emit('blind_sig_select', { ssn: '111111111', issue: '3je3', blindVoteHashes: blindVotesHashes })
 })
 
 socket.on('blind_sig_select_response', ({ index }) => {
   log('Vote index:', index, ' was selected')
-  // blinding factors
-  let factors
-  // vote strings
-  voteStrings
-  // blinded votes strings
-  let blindedVotesStrings
-  // vote hashes
-  let voteHashes
-  socket.emit('blind_sig_reveal', {})
+
+  // step up intermediary info to finish blind sig sceme
+  const blindingFactors_temp = []
+  const votes_temp = []
+  const voteshashed_temp = []
+  generatedVotes.forEach((vote, i) => {
+    if (index === i) {
+      blindingFactors_temp.push(undefined)
+      votes_temp.push(undefined)
+      voteshashed_temp.push(undefined)
+      return
+    }
+    blindingFactors_temp.push(vote.blindingFactor)
+    votes_temp.push(vote.rawVote)
+    voteshashed_temp.push(utils.hash(vote.rawVote))
+  })
+  socket.emit('blind_sig_reveal', { ssn: '111111111', issue: '3je3', bFactors: blindingFactors_temp, rawVotes: votes_temp, hashedVotes: voteshashed_temp })
 })
 
 socket.on('error', (error) => {

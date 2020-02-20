@@ -35,11 +35,11 @@ function processVotesHashes (socket) {
 }
 
 function verifyAndSign (socket) {
-  return async ({ ssn, issue }) => {
-    log.infor(`Got the revealed data about the votes for ${ssn} ${issue}`)
+  return async ({ ssn, issue, bFactors, rawVotes, hashedVotes }) => {
+    log.info(`Got the revealed data about the votes for ${ssn} ${issue}`)
     const voteHashes = await db.getVoteHashes(ssn, issue)
     // sign
-    socket.emit('blind_sig_reveal_response', { rtv: `This is the signed right to vote on ${data.issue}` })
+    socket.emit('blind_sig_reveal_response', { rtv: `This is the signed right to vote on ${issue}` })
   }
 }
 
