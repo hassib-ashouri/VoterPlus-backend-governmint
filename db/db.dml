@@ -1,2 +1,0 @@
-INSERT INTO issue VALUES ('3je3', 'prop_44', '','["Yes","No"]', '12-12-2020')
-INSERT INTO voter VALUES (111111111, 'fname1', 'lname2','', '', '["3je3"]')

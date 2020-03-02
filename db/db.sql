@@ -19,7 +19,7 @@ create table voter (
     e VARCHAR(700),
     can_vote_on JSON,
     PRIMARY KEY (ssn)
-)
+);
 
 CREATE TABLE vote (
     guid VARCHAR(116),
@@ -27,15 +27,15 @@ CREATE TABLE vote (
     choice VARCHAR(50),
     ris JSON,
     PRIMARY KEY (guid)
-)
+);
 
 CREATE TABLE issue (
-    id VARCHAR(50),
+    id VARCHAR(20),
     code_name VARCHAR(50),
     description VARCHAR(700),
     options JSON,
     deadline DATE,
-    PRIMARY KEY (id)
+    PRIMARY KEY (code_name)
 );
 
 CREATE TABLE vm (
@@ -46,3 +46,6 @@ CREATE TABLE vm (
     PRIMARY KEY (id)
 );
 
+INSERT INTO issue VALUES (UUID_SHORT(), 'prop_44', '','["Yes","No"]', '2020-12-12');
+INSERT INTO issue VALUES (UUID_SHORT(), 'COMDOM', '','["Yes","No"]', '2020-12-12');
+INSERT INTO voter VALUES ('123456789', 'fname1', 'lname2','', '', '["COMDOM"]');
