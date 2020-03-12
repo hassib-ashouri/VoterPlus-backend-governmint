@@ -26,7 +26,7 @@
     "supertest": "^4.0.2"
   },
   "scripts": {
-    "start": "nodemon -w ./app app/server.js",
+    "start": "DEBUG=express:* nodemon -w ./app app/server.js",
     "client": "nodemon -w ./test test/client.js",
     "test": "mocha ./test/controllersTest.js --exit"
   }

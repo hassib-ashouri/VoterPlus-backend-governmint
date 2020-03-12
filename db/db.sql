@@ -27,6 +27,7 @@ CREATE TABLE vote (
     choice VARCHAR(50),
     ris JSON,
     vote TEXT,
+
     sig TEXT,
     receipt VARCHAR(320),
     PRIMARY KEY (guid)
@@ -49,6 +50,6 @@ CREATE TABLE vm (
     PRIMARY KEY (id)
 );
 
-INSERT INTO issue VALUES (UUID_SHORT(), 'prop_44', '','["Yes","No"]', '2020-12-12');
-INSERT INTO issue VALUES (UUID_SHORT(), 'COMDOM', '','["Yes","optiona"]', '2020-12-12');
+INSERT INTO issue VALUES (UUID_SHORT(), 'prop_44', '','["yes","no"]', '2020-12-12');
+INSERT INTO issue VALUES (UUID_SHORT(), 'COMDOM', '','["yes","optiona"]', '2020-12-12');
 INSERT INTO voter VALUES ('123456789', 'fname1', 'lname2','', '', '["COMDOM"]');

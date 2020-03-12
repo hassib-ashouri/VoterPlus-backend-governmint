@@ -29,8 +29,8 @@ const mysql = require('mysql2')
 app.get('/', controllers.onTestReq)
 
 app.post('/getIssues', controllers.getSupportedIssuesasync)
-
 app.post('/votes', controllers.verifyVotersOnPost)
+app.get('/issues/:id', controllers.getIssuesCounts)
 
 io.on('connection', controllers.socketOnConnect)
 

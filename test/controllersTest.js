@@ -40,4 +40,19 @@ describe('Governmint Tests', () =>
         .end(done)
     })
   })
+
+  describe('GET /issues/COMDOM', () =>
+  {
+    it('shoulde get issue counts', (done) =>
+    {
+      request
+        .post('/issues/COMDOM')
+        .expect((res) =>
+        {
+          log.info('Response of issue counts', res.body)
+        })
+        .expect(200)
+        .end(done)
+    })
+  })
 })

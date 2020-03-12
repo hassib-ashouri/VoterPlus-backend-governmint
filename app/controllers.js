@@ -32,7 +32,8 @@ async function verifyVotersOnPost (req, res, next)
     // match count with votes in an array
     if (count !== votes.length)
     {
-      res.status(400).send({ err: 'Votes does not match count' })
+      res.status(400).send({ err: `Votes does not match count. Array size ${votes.length}. Count ${count}.` })
+      return
     }
 
     // check if the issue exists in the db and load valid choices
@@ -116,11 +117,12 @@ async function verifyVotersOnPost (req, res, next)
   }
 }
 
-function onTestReq (req, res, next)
+async function onTestReq (req, res, next)
 {
   res.send({ mess: 'Hello from Governmint.' })
 }
 
+// POST /getIssues
 async function getSupportedIssuesasync (req, res, next)
 {
   const ssn = req.body.ssn
@@ -136,6 +138,45 @@ async function getSupportedIssuesasync (req, res, next)
   const issues = rows[0].can_vote_on
   log.info('Got a request for issues')
   res.status(200).send(issues)
+}
+
+// GET /votes/
+async function getIssuesCounts (req, res, next)
+{
+  const code = req.params.id
+  log.debug(`GET /votes/${code}`)
+  const [rows, fields] = await db.getIssues(code)
+  // check if issues dont exist
+  if (!rows.length)
+  {
+    log.debug(`No issues under code ${code}`)
+    res.status(400)
+    return
+  }
+  const [choiceCounts, fields1] = await db.getIssueCount(code)
+  // copy the counts
+  const response = { options: [], totalCount: 0 }
+  for (const row of choiceCounts)
+  {
+    const optionInfo = {
+      name: response[row.choice],
+      count: row['count(*)']
+    }
+    response.options.push(optionInfo)
+    // increment the total count
+    response.totalCount += optionInfo.count
+  }
+
+  const responseT = {
+    name: rows[0].code_name,
+    options: [
+      { name: 'yes', count: 3 },
+      { name: 'no', count: 4 }
+    ],
+    totalCount: 7
+  }
+
+  res.status(200).send(responseT)
 }
 
 function socketOnConnect (socket)
@@ -378,5 +419,6 @@ module.exports = {
   verifyAndSign,
   onTestReq,
   getSupportedIssuesasync,
-  socketOnConnect
+  socketOnConnect,
+  getIssuesCounts
 }

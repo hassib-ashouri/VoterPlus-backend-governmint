@@ -3,6 +3,7 @@
 const winston = require('winston')
 const format = winston.format
 const logger = winston.createLogger({
+  level: 'debug',
   format: winston.format.combine(
     format.timestamp(),
     format.colorize()

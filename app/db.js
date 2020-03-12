@@ -52,6 +52,17 @@ function getIssues (codeName)
   return executeQuery(q, inserts)
 }
 
+function getIssueCount (issueCodeName)
+{
+  const q = `
+  select choice, count(*)
+  from vote
+  where issue_id = ?
+  group by choice`
+  const inserts = [issueCodeName]
+  return executeQuery(q, inserts)
+}
+
 function getVotes (issueCode, choice = '')
 {
   let q = `
@@ -255,5 +266,6 @@ module.exports = {
   getVoters,
   getVotes,
   getIssues,
-  insertVotes
+  insertVotes,
+  getIssueCount
 }
