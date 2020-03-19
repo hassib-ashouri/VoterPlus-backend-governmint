@@ -140,7 +140,7 @@ async function getSupportedIssuesasync (req, res, next)
   res.status(200).send(issues)
 }
 
-// GET /votes/
+// GET /issues/:id
 async function getIssuesCounts (req, res, next)
 {
   const code = req.params.id
@@ -177,6 +177,12 @@ async function getIssuesCounts (req, res, next)
   }
 
   res.status(200).send(responseT)
+}
+
+async function getGovKeys (req, res, next)
+{
+  // TODO finish implementation
+  res.status(400).send({ err: 'not implemented.' })
 }
 
 function socketOnConnect (socket)
@@ -338,7 +344,7 @@ function verifyAndSign (socket)
     {
       // No blinding factor is expected for the selected identity.
       if (i === savedSELECTED) return
-      if (!verifyContents(utils.hash(bVoteHash), bFactors[i], hashedVotes[i], rawVotes[i]))
+      if (!utils.verifyContents(utils.hash(bVoteHash), bFactors[i], hashedVotes[i], rawVotes[i], VOTE_FORMAT))
       {
         throw new Error(`Document ${rawVotes[i]} is invalid`)
       }
@@ -355,63 +361,6 @@ function verifyAndSign (socket)
   }
 }
 
-// TODO push below methods to util module if they depend on local vars
-
-/**
- *  Varify the validity of a vote document by comparing it to its hash and
- * unbliding using the `blindingFactor`.
- * @param {string} blindVoteHash - the output of blind method of *blind-sig* library hashed
- * @param {BigInteger} blindingFactor - the blind factor used to create `blindVoteHash`.
- * @param {string} rawVoteHash - hash of the raw vote
- * @param {string} rawVote - raw vote
- * @returns {boolean}
- */
-
-function verifyContents (blindVoteHash, blindingFactor, rawVoteHash, rawVote)
-{
-  // check format
-  if (!rawVote.match(VOTE_FORMAT))
-  {
-    log.info('Vote does not match the format.')
-    log.info(rawVote)
-    return false
-  }
-  // check the hash
-  const h = utils.hash(rawVote)
-  if (h !== rawVoteHash)
-  {
-    log.info(`Expecting hash of ${rawVoteHash}, but got ${h}`)
-    return false
-  }
-  // check the blinding factor
-  if (!consistent(blindVoteHash, blindingFactor, rawVote))
-  {
-    return false
-  }
-
-  return true
-}
-
-/**
- * verifies the validity of the `blindVoteHash`
- * it take the `rawVoteHash` blinds it and compares it to `blindVoteHash`
- * @param {string} blindVoteHash - the hash of the vote after blinding it.
- * @param {BigInteger} factor - blind factor used for passed `blindVoteHash`
- * @param {string} rawVotehash - the hash of the raw vote
- * @returns {boolean}
- */
-function consistent (blindVoteHash, factor, rawVotehash)
-{
-  // const n = keys.keyPair.n
-  // const e = new BigInteger(keys.keyPair.e.toString())
-  // blindVoteHash = blindVoteHash.toString()
-  // const bigHash = new BigInteger(utils.hash(rawVotehash), 16)
-  // const b = bigHash.multiply(factor.modPow(e, n)).mod(n).toString()
-  // const result = blindVoteHash === utils.hash(b.toString())
-  // return result
-  return true
-}
-
 module.exports = {
   verifyVotersOnPost,
   getVoteTempelate,
@@ -420,5 +369,6 @@ module.exports = {
   onTestReq,
   getSupportedIssuesasync,
   socketOnConnect,
-  getIssuesCounts
+  getIssuesCounts,
+  getGovKeys
 }

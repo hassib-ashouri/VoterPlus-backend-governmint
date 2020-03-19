@@ -1,9 +1,8 @@
 'use strict'
-const blindSigs = require('blind-signatures')
 const controllers = require('./controllers')
-const fs = require('fs').promises
 const logger = require('./logger')
 const config = require('./config')
+const NodeRSA = require('node-rsa')
 
 // Express server setup
 const cors = require('cors')
@@ -54,13 +53,12 @@ async function loadKeys (filePath)
 // .catch(reason => {
 //   log.error("Problem writing private key to the file")
 // })
-  logger.info('started loading the pub key')
-  const keyText = await fs.readFile(filePath)
-  const pubKey = blindSigs.keyGeneration()
-  const govKey = pubKey.importKey(keyText, 'pkcs1-private-pem')
-  logger.info('loaded the public key')
-  logger.info(`N: ${govKey.keyPair.n}`)
-  logger.info(`E: ${govKey.keyPair.e}`)
+  const pubKey = new NodeRSA()
+  const govKey = pubKey.importKey(config.govKey, 'pkcs1-private-pem')
+  logger.debug(`
+  loaded the public key
+  N: ${govKey.keyPair.n.toString().slice(0, 50)}...
+  E: ${govKey.keyPair.e}`)
   return govKey
 }
 async function initApp (expApp, httpServer, sqlPoolConfig, mongoUrl, mongoCollection, port, listenOn)
@@ -68,7 +66,7 @@ async function initApp (expApp, httpServer, sqlPoolConfig, mongoUrl, mongoCollec
   const govKeys = await loadKeys('./priv.pem')
     .catch(reason =>
     {
-      logger.error('Problem with loading the keys. Server stopped')
+      logger.error('Problem with loading the keys. Server stopped', reason)
       process.exit()
     })
   const pool = mysql.createPool(sqlPoolConfig)

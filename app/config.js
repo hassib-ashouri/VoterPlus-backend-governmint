@@ -8,10 +8,11 @@ if (envVars.error)
 }
 else
 {
-  logger.info('Loaded env variables', envVars.parsed)
+  logger.debug('Loaded env variables', envVars.parsed)
 }
 
 module.exports = {
+  govKey: process.env.GOV_KEY,
   port: process.env.PORT || 4000,
   on: process.env.ON || 'localhost',
   mongoUrl: process.env.DB_URL,
