@@ -271,6 +271,16 @@ function getVoteHashes (ssn, issue)
   })
 }
 
+function markIssueVotedOnForUser(ssn, issue, signature)
+{
+  const q = `
+  update voter
+  set can_vote_on = JSON_SET(can_vote_on, ?, ?)
+  where ssn = ? ;`
+  const inserts = [`$.${issue}`, `{"sig": ${signature},"timestamp": ${Date.now()}}`, ssn]
+  return executeQuery(q, inserts)
+}
+
 module.exports = {
   getTemplateAquisitionStage,
   insertTemplateAquisition,
@@ -282,5 +292,6 @@ module.exports = {
   getVotes,
   getIssues,
   insertVotes,
-  getIssueCount
+  getIssueCount,
+  markIssueVotedOnForUser
 }

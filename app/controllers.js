@@ -135,7 +135,9 @@ async function getSupportedIssuesasync (req, res, next)
     res.status(404).send()
     return
   }
-  const issues = rows[0].can_vote_on
+
+  // get the issues that have not been voted on
+  const issues = Object.keys(rows[0].can_vote_on).filter(issue => rows[0].can_vote_on[issue].sig === null)
   log.info('Got a request for issues')
   res.status(200).send(issues)
 }
@@ -241,10 +243,9 @@ function getVoteTempelate (socket)
     // user found
     // check if voter can vote
     const canVoteOn = rows[0].can_vote_on
-    if (!canVoteOn.includes(issue))
+    if (canVoteOn[issue] && canVoteOn[issue].sig !== null)
     {
-      const error = new Error(`
-      Voter ${ssn} cannot vote on ${issue}`)
+      const error = new Error(`Voter ${ssn} cannot vote on ${issue}`)
       response = {
         err: error.message
       }
@@ -352,16 +353,21 @@ function verifyAndSign (socket)
 
     // If we made it here, all looked good.
     // Return the signed vote to the voter.
-    const SignedVote = blindSigs.sign({
+    const signedVote = blindSigs.sign({
       blinded: hashes[savedSELECTED],
       key: getKeys()
     }).toString()
     log.info(`Sent right to vote for ${ssn} issue ${issue}`)
-    socket.emit('blind_sig_reveal_response', { signature: SignedVote })
+    socket.emit('blind_sig_reveal_response', { signature: signedVote })
     // remove voter from in progress pipeline
     await db.removeFromInProgress(ssn, issue)
     .catch(reason => {
       log.error(`Problem remove from in hot data\n${reason.stack}`)
+    })
+    // mark in sql that the user voted
+    await db.markIssueVotedOnForUser(ssn, issue, signedVote)
+    .catch(reason => {
+      log.error(`Problem marking issue voted on for user ${ssn}\n${reason.stack}`)
     })
   }
 }

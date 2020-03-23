@@ -52,4 +52,4 @@ CREATE TABLE vm (
 
 INSERT INTO issue VALUES (UUID_SHORT(), 'prop_44', '','["yes","no"]', '2020-12-12');
 INSERT INTO issue VALUES (UUID_SHORT(), 'COMDOM', '','["yes","optiona"]', '2020-12-12');
-INSERT INTO voter VALUES ('123456789', 'fname1', 'lname2','', '', '["COMDOM"]');
+INSERT INTO voter VALUES ('123456789', 'fname1', 'lname2','', '', '{"COMDOM": {"sig": null, "timestamp": null}}');
