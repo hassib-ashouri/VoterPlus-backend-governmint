@@ -80,7 +80,7 @@ async function initApp (expApp, httpServer, sqlPoolConfig, mongoUrl, mongoCollec
   // make db available globally. this is for sockets
   global.mysqlDb = pool
   global.mongoDb = db
-  global.keys = govKeys.keyPair
+  global.keys = govKeys
   // for express controllers
   expApp.locals.mysqlDb = pool
   expApp.locals.mongoDb = db

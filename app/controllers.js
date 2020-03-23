@@ -79,8 +79,8 @@ async function verifyVotersOnPost (req, res, next)
       const isGoodSig = blindSigs.verify({
         unblinded: signature,
         message: voteStr,
-        E: getKeys().e,
-        N: getKeys().n
+        E: getKeys().KeyPair.e,
+        N: getKeys().KeyPair.n
       })
 
       if (!isGoodSig)
@@ -354,7 +354,7 @@ function verifyAndSign (socket)
     // Return the signed vote to the voter.
     const SignedVote = blindSigs.sign({
       blinded: hashes[savedSELECTED],
-      key: keys
+      key: getKeys()
     }).toString()
     log.info(`Sent right to vote for ${ssn} issue ${issue}`)
     socket.emit('blind_sig_reveal_response', { signature: SignedVote })
