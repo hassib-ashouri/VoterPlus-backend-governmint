@@ -142,13 +142,16 @@ async function insertTestDocument (document)
 
 /**
  *
- * @param {(op:Db) => Promise<void>} op
+ * @param {(dn:Db) => Promise<void>} op
  * @param {string=} dbName
  */
 async function dbExecuter (op)
 {
   try
   {
+    /**
+     * @type {Db}
+     */
     const DB = global.mongoDb
     await op(DB)
   }
@@ -233,6 +236,19 @@ function saveBlindVoteHashes (ssn, issue, hashes, selected)
   })
 }
 
+function removeFromInProgress(ssn, issue)
+{
+  return new Promise((resolve, reject) => {
+    dbExecuter(async (db) => {
+      await db.collection(votesInProgress).deleteOne({ssn: {$eq: ssn}, issue: {$eq: issue}})
+      .catch(reason => {
+        reject(reason)
+      })
+      resolve()
+    })
+  })
+}
+
 function getVoteHashes (ssn, issue)
 {
   return new Promise((resolve, reject) =>
@@ -260,6 +276,7 @@ module.exports = {
   insertTemplateAquisition,
   insertTestDocument,
   saveBlindVoteHashes,
+  removeFromInProgress,
   getVoteHashes,
   getVoters,
   getVotes,

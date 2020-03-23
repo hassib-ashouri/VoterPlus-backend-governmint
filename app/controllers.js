@@ -358,6 +358,11 @@ function verifyAndSign (socket)
     }).toString()
     log.info(`Sent right to vote for ${ssn} issue ${issue}`)
     socket.emit('blind_sig_reveal_response', { signature: SignedVote })
+    // remove voter from in progress pipeline
+    await db.removeFromInProgress(ssn, issue)
+    .catch(reason => {
+      log.error(`Problem remove from in hot data\n${reason.stack}`)
+    })
   }
 }
 
