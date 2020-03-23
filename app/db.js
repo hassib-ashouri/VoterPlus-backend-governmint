@@ -209,10 +209,8 @@ function saveBlindVoteHashes (ssn, issue, hashes, selected)
           issue: { $eq: issue }
         }, {
           $set: {
-            stages: {
-              blind_sig_select: { hashes, selected }
+            "stages.blind_sig_select": { hashes, selected }
             }
-          }
         })
         // see if at least on doc was changed
         if (results.modifiedCount === 1)
