@@ -1,7 +1,9 @@
 'use strict'
 const logger = require('./logger')
 // load env vars
-const envVars = require('dotenv').config()
+const envVars = require('dotenv').config({
+  path: '.envvv'
+})
 if (envVars.error)
 {
   throw envVars.error
