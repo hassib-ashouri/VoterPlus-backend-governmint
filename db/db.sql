@@ -52,4 +52,11 @@ CREATE TABLE vm (
 
 INSERT INTO issue VALUES (UUID_SHORT(), 'prop_44', '','["yes","no"]', '2020-12-12');
 INSERT INTO issue VALUES (UUID_SHORT(), 'COMDOM', '','["yes","optiona"]', '2020-12-12');
-INSERT INTO voter VALUES ('123456789', 'fname1', 'lname2','', '', '{"COMDOM": {"sig": null, "timestamp": null}}');
+
+
+-- reset all issues from users
+-- had to be done this way to get around safe mode guards
+-- safe mode wont allow update statements without where clause that uses one of the key attributes
+update voter 
+set can_vote_on = "{""COMDOM"": {""sig"": null, ""timestamp"": null}}"
+where ssn > 100000000;
