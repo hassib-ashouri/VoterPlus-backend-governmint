@@ -30,6 +30,7 @@ app.get('/', controllers.onTestReq)
 app.post('/getIssues', controllers.getSupportedIssuesasync)
 app.post('/votes', controllers.verifyVotersOnPost)
 app.get('/issues/:id', controllers.getIssuesCounts)
+app.get('/issues', controllers.getIssuesCounts)
 
 io.on('connection', controllers.socketOnConnect)
 
