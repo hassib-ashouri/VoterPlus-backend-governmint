@@ -96,6 +96,9 @@ function getVotes (issueCode, choice = '')
 
 function executeQuery (query, inserts)
 {
+  /**
+   * @type {Pool}
+   */
   const promPool = global.mysqlDb.promise()
   return promPool.query(query, inserts)
 }
@@ -212,8 +215,8 @@ function saveBlindVoteHashes (ssn, issue, hashes, selected)
           issue: { $eq: issue }
         }, {
           $set: {
-            "stages.blind_sig_select": { hashes, selected }
-            }
+            'stages.blind_sig_select': { hashes, selected }
+          }
         })
         // see if at least on doc was changed
         if (results.modifiedCount === 1)
@@ -236,14 +239,17 @@ function saveBlindVoteHashes (ssn, issue, hashes, selected)
   })
 }
 
-function removeFromInProgress(ssn, issue)
+function removeFromInProgress (ssn, issue)
 {
-  return new Promise((resolve, reject) => {
-    dbExecuter(async (db) => {
-      await db.collection(votesInProgress).deleteOne({ssn: {$eq: ssn}, issue: {$eq: issue}})
-      .catch(reason => {
-        reject(reason)
-      })
+  return new Promise((resolve, reject) =>
+  {
+    dbExecuter(async (db) =>
+    {
+      await db.collection(votesInProgress).deleteOne({ ssn: { $eq: ssn }, issue: { $eq: issue } })
+        .catch(reason =>
+        {
+          reject(reason)
+        })
       resolve()
     })
   })
@@ -271,7 +277,7 @@ function getVoteHashes (ssn, issue)
   })
 }
 
-function markIssueVotedOnForUser(ssn, issue, signature)
+function markIssueVotedOnForUser (ssn, issue, signature)
 {
   const q = `
   update voter

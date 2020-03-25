@@ -361,14 +361,16 @@ function verifyAndSign (socket)
     socket.emit('blind_sig_reveal_response', { signature: signedVote })
     // remove voter from in progress pipeline
     await db.removeFromInProgress(ssn, issue)
-    .catch(reason => {
-      log.error(`Problem remove from in hot data\n${reason.stack}`)
-    })
+      .catch(reason =>
+      {
+        log.error(`Problem remove from in hot data\n${reason.stack}`)
+      })
     // mark in sql that the user voted
     await db.markIssueVotedOnForUser(ssn, issue, signedVote)
-    .catch(reason => {
-      log.error(`Problem marking issue voted on for user ${ssn}\n${reason.stack}`)
-    })
+      .catch(reason =>
+      {
+        log.error(`Problem marking issue voted on for user ${ssn}\n${reason.stack}`)
+      })
   }
 }
 

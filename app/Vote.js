@@ -7,14 +7,17 @@ const IDEN_STR = 'This is one voting right for '
 /**
  * Class representing a vote.
  */
-class Vote {
+class Vote
+{
   /**
      * @returns {string} A string of numbers representing the blinded vote.
      */
-  get blinded () {
+  get blinded ()
+  {
     // check if blinded att is set.
     // if not, blind, save the factor, and return the blinded in string type.
-    if (!'_blinded' in this) {
+    if (!'_blinded' in this)
+    {
       this._blind()
     }
 
@@ -25,8 +28,10 @@ class Vote {
      * the factor used to blind this vote.
      * @returns {BigInteger}
      */
-  get blindingFactor () {
-    if (!'_blinded' in this) {
+  get blindingFactor ()
+  {
+    if (!'_blinded' in this)
+    {
       this._blind()
     }
 
@@ -36,12 +41,15 @@ class Vote {
   /**
      * return the vote in its raw format.
      */
-  get rawVote () {
+  get rawVote ()
+  {
     return this._voteStr
   }
 
-  get signature () {
-    if (!'_signature' in this) {
+  get signature ()
+  {
+    if (!'_signature' in this)
+    {
       // maybe throw an error
       throw new Error(`Supply governmint signature for vote ${this._guid}`)
     }
@@ -49,20 +57,25 @@ class Vote {
     return this._signature
   }
 
-  get guid () {
+  get guid ()
+  {
     return this._guid
   }
 
-  get n () {
+  get n ()
+  {
     return this._key.keyPair.n
   }
 
-  get e () {
+  get e ()
+  {
     return this._key.keyPair.e
   }
 
-  constructor (template, ssn, govE, govN, signature, rawVote, lIden, rIden) {
-    if (signature == null) {
+  constructor (template, ssn, govE, govN, signature, rawVote, lIden, rIden)
+  {
+    if (signature == null)
+    {
       this._voteStr = template
       this.govE = govE
       this.govN = govN
@@ -85,7 +98,9 @@ class Vote {
         .replace(/RHASHES/, rightHashes.join('-'))
 
       this._blind()
-    } else {
+    }
+    else
+    {
       this._signature = signature
       this.leftIdent = lIden
       this.rightIdent = rIden
@@ -95,11 +110,13 @@ class Vote {
     }
   }
 
-  _constructIdenArrays (ssn) {
+  _constructIdenArrays (ssn)
+  {
     const leftHashes = []
     const rightHashes = []
 
-    for (let i = 0; i < VOTE_RIS_LENGTH; i++) {
+    for (let i = 0; i < VOTE_RIS_LENGTH; i++)
+    {
       // Making an OTP for the identity string.
       let { key, ciphertext } = utils.makeOTP({ string: `${IDEN_STR}:${ssn}` })
       // represent buffers in hex
@@ -115,7 +132,8 @@ class Vote {
     return [leftHashes, rightHashes]
   }
 
-  updateGovSig (s) {
+  updateGovSig (s)
+  {
     this._signature = blindSigs.unblind({
       signed: s,
       N: this.govN,
@@ -123,21 +141,27 @@ class Vote {
     })
   }
 
-  getRis (isRight, index) {
-    if (index >= VOTE_RIS_LENGTH || index < 0) {
+  getRis (isRight, index)
+  {
+    if (index >= VOTE_RIS_LENGTH || index < 0)
+    {
       throw new Error('Invalid index requested')
     }
     let iden
-    if (isRight) {
+    if (isRight)
+    {
       iden = this.rightIdent[index]
-    } else {
+    }
+    else
+    {
       iden = this.leftIdent[index]
     }
 
     return iden
   }
 
-  _blind () {
+  _blind ()
+  {
     const { blinded, r } = blindSigs.blind({
       message: this.rawVote,
       N: this.govN,
@@ -152,11 +176,13 @@ class Vote {
      * get the string format of the vote
      * @returns {string}
      */
-  toString () {
+  toString ()
+  {
     return this.rawVote
   }
 
-  static encode (vote) {
+  static encode (vote)
+  {
     const encoded = {
       signature: vote.signature.toString(),
       rawVote: vote.rawVote.toString(),
@@ -166,7 +192,8 @@ class Vote {
     return JSON.stringify(encoded)
   }
 
-  static decode (s) {
+  static decode (s)
+  {
     const { signature, rawVote, leftIdent, rightIdent } = JSON.parse(s)
 
     return new Vote(undefined, undefined, undefined, undefined, signature, rawVote, leftIdent, rightIdent)
@@ -177,7 +204,8 @@ class Vote {
      * @param {string} vote vote object
      * @returns {{guid:string,issue:string,idenHashes:string[][],E:string, N:string}}
      */
-  static parseVote (rawVote) {
+  static parseVote (rawVote)
+  {
     let [issue, e, n, guid, lhashes, rhashes] = rawVote.split(':')[1].split(',')
     lhashes = lhashes.split('-')
     rhashes = rhashes.split('-')
