@@ -31,6 +31,7 @@ app.post('/getIssues', controllers.getSupportedIssuesasync)
 app.post('/votes', controllers.verifyVotersOnPost)
 app.get('/issues/:id', controllers.getIssuesCounts)
 app.get('/issues', controllers.getIssuesCounts)
+app.post('/verifyCount', controllers.verifyVoteConsideration)
 
 io.on('connection', controllers.socketOnConnect)
 

@@ -70,7 +70,7 @@ async function verifyVotersOnPost (req, res, next)
       if (guid in votesOnThisIssueSoFar)
       {
         log.error('Dublicate vote detected', { guid })
-        // launch dublicate detection logic using the new and persisted ris
+        // TODO launch dublicate detection logic using the new and persisted ris
         continue
       }
 
@@ -79,6 +79,7 @@ async function verifyVotersOnPost (req, res, next)
       const isGoodSig = blindSigs.verify({
         unblinded: signature,
         message: voteStr,
+        // TODO i might be able to just pass the key object
         E: getKeys().KeyPair.e,
         N: getKeys().KeyPair.n
       })
@@ -112,6 +113,7 @@ async function verifyVotersOnPost (req, res, next)
   }
   catch (error)
   {
+    // TODO better error handling here. pass the message in response
     log.error('Problem with verifying votes request.\n', error)
     res.status(500).send()
   }
@@ -125,6 +127,7 @@ async function onTestReq (req, res, next)
 // POST /getIssues
 async function getSupportedIssuesasync (req, res, next)
 {
+  // TODO log request
   const ssn = req.body.ssn
 
   // db operation to get issues
@@ -132,6 +135,7 @@ async function getSupportedIssuesasync (req, res, next)
   // if no voters found with the ssn
   if (rows.length === 0)
   {
+    // TODO message like "invalid ssn" without revealing to much info
     res.status(404).send()
     return
   }
@@ -145,6 +149,7 @@ async function getSupportedIssuesasync (req, res, next)
 // GET /issues/:id
 async function getIssuesCounts (req, res, next)
 {
+  // TODO new impolementation
   const code = req.params.id
   log.debug(`GET /votes/${code}`)
   const [rows, fields] = await db.getIssues(code)
@@ -187,10 +192,30 @@ async function getGovKeys (req, res, next)
   res.status(400).send({ err: 'not implemented.' })
 }
 
+async function verifyVoteConsideration (req, res, next)
+{
+  const {
+    reciept: {
+      signature,
+      guid
+    }
+  } = req.body
+  // receipt format `${receipt.receiptNum},${receipt.voteGuid},${receipt.vm},${receipt.timeStamp},${receipt.choice}`
+  // verify vote machine sig
+
+  // lookup vote in db using guid
+  //    make sure it is counted for the right issue
+
+  // 200 vote counted
+  // 404 vote does not exist
+  res.status(501).send()
+}
+
 function socketOnConnect (socket)
 {
+  // TODO fix log messages in this function
   console.log('New socket connected', socket.id)
-
+  // TODO test whether I need to pass the socket
   socket.on('template_acquisition', getVoteTempelate(socket))
 
   socket.on('blind_sig_select', processVotesHashes(socket))
@@ -206,6 +231,7 @@ function socketOnConnect (socket)
 
 function getVoteTempelate (socket)
 {
+  // TODO fix log messages. not console log
   return async (args) =>
   {
     log.info(`Recieved a request for a tempelate. Arguments ${JSON.stringify(args)}`)
@@ -226,6 +252,7 @@ function getVoteTempelate (socket)
       More than one user with ssn ${ssn}`)
       log.error(error.message)
       throw error
+      // TODO exit method here
     }
     else if (rows.length === 0)
     { // user not found
@@ -254,6 +281,7 @@ function getVoteTempelate (socket)
     }
 
     // get the issues
+    // TODO streamline whether the issue should be an id
     const [rows2, fields2] = await db.getIssues(issue)
     // wront issue name
     if (rows2.length === 0)
@@ -297,6 +325,7 @@ function getVoteTempelate (socket)
 
 function processVotesHashes (socket)
 {
+  // TODO fix log messages
   return async ({ ssn, issue, blindVoteHashes }) =>
   {
     log.info(`Recieved blind vote hashes for ${ssn} ${issue}`)
@@ -320,6 +349,7 @@ function processVotesHashes (socket)
 
 function verifyAndSign (socket)
 {
+  // TODO fix log messages
   return async ({ ssn, issue, bFactors, rawVotes, hashedVotes }) =>
   {
     log.info(`Recieved the revealed data about the votes for ${ssn} ${issue}`)
@@ -329,6 +359,7 @@ function verifyAndSign (socket)
     if (blindVoteHashes.length > 1 || blindVoteHashes.length === 0)
     {
       throw new Error('User has more than one submission of')
+      // TODO exit and return response
     }
     const {
       ssn: savedSSN,
@@ -348,6 +379,7 @@ function verifyAndSign (socket)
       if (!utils.verifyContents(utils.hash(bVoteHash), bFactors[i], hashedVotes[i], rawVotes[i], VOTE_FORMAT))
       {
         throw new Error(`Document ${rawVotes[i]} is invalid`)
+        // TODO exit with response and error
       }
     })
 
@@ -383,5 +415,6 @@ module.exports = {
   getSupportedIssuesasync,
   socketOnConnect,
   getIssuesCounts,
-  getGovKeys
+  getGovKeys,
+  verifyVoteConsideration
 }

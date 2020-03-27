@@ -131,6 +131,7 @@ function verifyContents (blindVoteHash, blindingFactor, rawVoteHash, rawVote, vo
     return false
   }
   // check the blinding factor
+  // TODO replace consistent function with new functionalify from blindsigs
   if (!consistent(blindVoteHash, blindingFactor, rawVote))
   {
     return false
