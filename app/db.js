@@ -100,6 +100,21 @@ function getVotes (issueCode, choice, guid)
   return executeQuery(q, inserts)
 }
 
+function getVMInfo (id)
+{
+  let q = `
+  select *
+  from vm
+  where 1 = 1 `
+  const inserts = []
+  if (id && typeof id === 'string')
+  {
+    q += 'and id = ?'
+    inserts.push(id)
+  }
+  return executeQuery(q, inserts)
+}
+
 function executeQuery (query, inserts)
 {
   /**
@@ -305,5 +320,6 @@ module.exports = {
   getIssues,
   insertVotes,
   getIssueCount,
-  markIssueVotedOnForUser
+  markIssueVotedOnForUser,
+  getVMInfo
 }

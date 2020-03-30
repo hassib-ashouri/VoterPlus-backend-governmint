@@ -46,8 +46,7 @@ CREATE TABLE issue (
 CREATE TABLE vm (
     id VARCHAR(50),
     url VARCHAR(2000),
-    n VARCHAR(700),
-    e VARCHAR(700),
+    pub_key_cert TEXT,
     PRIMARY KEY (id)
 );
 

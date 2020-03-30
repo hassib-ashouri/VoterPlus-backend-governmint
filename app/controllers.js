@@ -223,20 +223,19 @@ async function verifyVoteConsideration (req, res, next)
   } = req.body
   // error messages
   const BAD_RECIEPT_SIG = 'Cannot verify reciept signature'
+  const VM_NOT_FOUND = 'Vote machine not found'
   const VOTE_NOT_FOUND = 'Vote not found'
   try
   {
     // verify vote machine sig
-    // TODO get keys from db
+    // get vote certificate
+    const [vmInfo] = await db.getVMInfo(vm)
+    if (vmInfo.length === 0)
+    {
+      throw new Error(VM_NOT_FOUND)
+    }
     const vmKeys = new NodeRSA()
-    vmKeys.importKey(`-----BEGIN RSA PUBLIC KEY-----
-  MIIBCgKCAQEAiN19r5yAEWPL64CGbZMaGnlcsRthgNefey3VF5PpUgH8fst4dGQj
-  11xRUZZXx0Q3CP/jDwdnQdlR0UBAvORGOdnOi0dQ5lO/p4AEJw/1sThTNUyOMl7B
-  TuLVReYn8rOkuvopMHB+IhAZSJcvEK6nNMWJo+D2ZkpF+wqFq+m83VKeJAiyufHQ
-  aqpOH8s80hL5epm5QepRbDXCHKr2ixUfSC62M+NMgWO19PxYhawsO6HUb5/itXBp
-  AeyomW069U56FTAlvbGNcUECoJE0hOhglBMcah0nqtyNkInUev3aaf/9lfiIL3S5
-  N+lRG4sojKk4Bp7lXxIT420bF+tOGG4GUwIDAQAB
-  -----END RSA PUBLIC KEY-----`, 'pkcs1-public-pem')
+    vmKeys.importKey(vmInfo[0].pub_key_cert, 'pkcs1-public-pem')
     const recieptToVerify = `${receiptNum},${voteGuid},${vm},${timeStamp},${choice}`
     const isRecieptGood = vmKeys.verify(recieptToVerify, signature, 'hex', 'hex')
     if (!isRecieptGood)
@@ -258,16 +257,21 @@ async function verifyVoteConsideration (req, res, next)
     if (error.message === BAD_RECIEPT_SIG)
     {
       log.debug(error.message, { voteGuid, issue, choice })
-      res.status(401).send()
+      res.status(401).send({ err: error.message })
     }
     else if (error.message === VOTE_NOT_FOUND)
     {
       log.debug(error.message, { voteGuid, issue, choice })
-      res.status(404).send()
+      res.status(404).send({ err: error.message })
+    }
+    else if (error.message === VM_NOT_FOUND)
+    {
+      log.debug(error.message, { vm })
+      res.status(404).send({ err: error.message })
     }
     else
     {
-      log.error(error)
+      log.error(error.message, error)
       res.status(500).send()
     }
   }
