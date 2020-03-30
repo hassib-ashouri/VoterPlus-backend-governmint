@@ -21,6 +21,7 @@ create table voter (
     PRIMARY KEY (ssn)
 );
 
+Drop table if exists vote;
 CREATE TABLE vote (
     guid VARCHAR(116),
     issue_id VARCHAR(50),

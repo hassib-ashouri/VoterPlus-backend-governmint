@@ -63,7 +63,7 @@ function getIssueCount (issueCodeName)
   return executeQuery(q, inserts)
 }
 
-function getVotes (issueCode, choice = '')
+function getVotes (issueCode, choice, guid)
 {
   let q = `
     select *
@@ -72,24 +72,30 @@ function getVotes (issueCode, choice = '')
   const inserts = []
   if (issueCode && typeof issueCode === 'string')
   {
-    q += 'and issue_id = ?'
+    q += 'and issue_id = ? '
     inserts.push(issueCode)
   }
-  else if (issueCode && Array.isArray(issueCode))
+  else if (issueCode && Array.isArray(issueCode) && issueCode.length > 0)
   {
-    q += 'and issue_id in (?)'
+    q += 'and issue_id in (?) '
     inserts.push(issueCode)
   }
 
   if (choice && typeof choice === 'string')
   {
-    q += 'and choice = ?'
+    q += 'and choice = ? '
     inserts.push(choice)
   }
-  else if (choice && Array.isArray(choice))
+  else if (choice && Array.isArray(choice) && choice.length > 0)
   {
-    q += 'and choice in (?)'
+    q += 'and choice in (?) '
     inserts.push(choice)
+  }
+
+  if (guid && typeof guid === 'string')
+  {
+    q += 'and guid = ?'
+    inserts.push(guid)
   }
   return executeQuery(q, inserts)
 }

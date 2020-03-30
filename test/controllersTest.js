@@ -3,6 +3,7 @@
 const assert = require('assert')
 const log = require('../app/logger')
 const votesToVerifyRequset = require('./votesToVerifyRequest')
+const recieptObject = require('./VoteReciept')
 const supertest = require('supertest')
 let request
 
@@ -74,6 +75,26 @@ describe('Governmint Tests', () =>
     it('should return an empty object', (done) =>
     {
       done('Not implemented')
+    })
+  })
+
+  describe('POST /verifyCount', () =>
+  {
+    const requestBody = {
+      reciept: recieptObject
+    }
+    it('should verify correctly signed reciept', (done) =>
+    {
+      request
+        .post('/verifyCount')
+        .send(requestBody)
+        .expect(200)
+        .end(done)
+    })
+
+    it('should fail with bad recipt', (done) =>
+    {
+      done('Not implimented')
     })
   })
 })

@@ -2,19 +2,18 @@ const log = require('./logger')
 const db = require('./db')
 const utils = require('./utils')
 const blindSigs = require('blind-signatures')
-// local vars
+const NodeRSA = require('node-rsa')
+// local vars.import('') vmKeys. vmKeys.
 const getKeys = () => global.keys
 const VOTE_TEMPLATE = 'This is one voting right for:ISSUE,E,N,NOUNCE,LHASHES,RHASHES'
 const VOTE_FORMAT = /This is one voting right for:(.*),(.*),(.*),(.*),(.*),(.*)/
 const NUM_BLINDED_TEMPLATES = 10
-
 /**
    *
    * @param {Exp.request} req
    * @param {Exp.response} res
    * @param {*} next
-   */
-async function verifyVotersOnPost (req, res, next)
+   */async function verifyVotersOnPost (req, res, next)
 {
   const {
     issue,
@@ -210,21 +209,68 @@ async function getGovKeys (req, res, next)
 
 async function verifyVoteConsideration (req, res, next)
 {
+  log.debug('POST /verifyCount', req.body)
   const {
     reciept: {
+      receiptNum,
       signature,
-      guid
+      voteGuid,
+      vm,
+      timeStamp,
+      choice,
+      issue
     }
   } = req.body
-  // receipt format `${receipt.receiptNum},${receipt.voteGuid},${receipt.vm},${receipt.timeStamp},${receipt.choice}`
-  // verify vote machine sig
+  // error messages
+  const BAD_RECIEPT_SIG = 'Cannot verify reciept signature'
+  const VOTE_NOT_FOUND = 'Vote not found'
+  try
+  {
+    // verify vote machine sig
+    // TODO get keys from db
+    const vmKeys = new NodeRSA()
+    vmKeys.importKey(`-----BEGIN RSA PUBLIC KEY-----
+  MIIBCgKCAQEAiN19r5yAEWPL64CGbZMaGnlcsRthgNefey3VF5PpUgH8fst4dGQj
+  11xRUZZXx0Q3CP/jDwdnQdlR0UBAvORGOdnOi0dQ5lO/p4AEJw/1sThTNUyOMl7B
+  TuLVReYn8rOkuvopMHB+IhAZSJcvEK6nNMWJo+D2ZkpF+wqFq+m83VKeJAiyufHQ
+  aqpOH8s80hL5epm5QepRbDXCHKr2ixUfSC62M+NMgWO19PxYhawsO6HUb5/itXBp
+  AeyomW069U56FTAlvbGNcUECoJE0hOhglBMcah0nqtyNkInUev3aaf/9lfiIL3S5
+  N+lRG4sojKk4Bp7lXxIT420bF+tOGG4GUwIDAQAB
+  -----END RSA PUBLIC KEY-----`, 'pkcs1-public-pem')
+    const recieptToVerify = `${receiptNum},${voteGuid},${vm},${timeStamp},${choice}`
+    const isRecieptGood = vmKeys.verify(recieptToVerify, signature, 'hex', 'hex')
+    if (!isRecieptGood)
+    {
+      throw new Error(BAD_RECIEPT_SIG)
+    }
+    // lookup vote in db using guid
+    const [rows] = await db.getVotes(issue, choice, voteGuid)
+    //    make sure it is counted for the right issue
+    if (rows.length === 0)
+    {
+      throw new Error(VOTE_NOT_FOUND)
+    }
 
-  // lookup vote in db using guid
-  //    make sure it is counted for the right issue
-
-  // 200 vote counted
-  // 404 vote does not exist
-  res.status(501).send()
+    res.status(200).send()
+  }
+  catch (error)
+  {
+    if (error.message === BAD_RECIEPT_SIG)
+    {
+      log.debug(error.message, { voteGuid, issue, choice })
+      res.status(401).send()
+    }
+    else if (error.message === VOTE_NOT_FOUND)
+    {
+      log.debug(error.message, { voteGuid, issue, choice })
+      res.status(404).send()
+    }
+    else
+    {
+      log.error(error)
+      res.status(500).send()
+    }
+  }
 }
 
 function socketOnConnect (socket)
