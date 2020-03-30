@@ -80,8 +80,7 @@ async function verifyVotersOnPost (req, res, next)
         unblinded: signature,
         message: voteStr,
         // TODO i might be able to just pass the key object
-        E: getKeys().KeyPair.e,
-        N: getKeys().KeyPair.n
+        key: getKeys()
       })
 
       if (!isGoodSig)
@@ -149,41 +148,58 @@ async function getSupportedIssuesasync (req, res, next)
 // GET /issues/:id
 async function getIssuesCounts (req, res, next)
 {
-  // TODO new impolementation
-  const code = req.params.id
-  log.debug(`GET /votes/${code}`)
-  const [rows, fields] = await db.getIssues(code)
-  // check if issues dont exist
-  if (!rows.length)
+  log.debug(`GET /votes/${req.params.ids}`)
+
+  const codes = req.params.ids !== undefined
+    ? req.params.ids.split(';')
+    : []
+
+  try
   {
-    log.debug(`No issues under code ${code}`)
-    res.status(400)
-    return
-  }
-  const [choiceCounts, fields1] = await db.getIssueCount(code)
-  // copy the counts
-  const response = { options: [], totalCount: 0 }
-  for (const row of choiceCounts)
-  {
-    const optionInfo = {
-      name: response[row.choice],
-      count: row['count(*)']
+    const [rows, fields] = await db.getIssues(codes)
+      .catch(reason =>
+      {
+        const err = new Error('Error getting issues' + reason)
+        throw err
+      })
+
+    // loop and get issue counts
+    const issueCountsPromises = rows.map((issueRow, i) => db.getIssueCount(issueRow.code_name))
+    const counts = await Promise.all(issueCountsPromises)
+      .catch(reason =>
+      {
+        const err = new Error('Error retreiving counts' + reason)
+        throw err
+      })
+    const serverResponse = {}
+    const defaultCountResponse = { options: [], totalCount: 0 }
+    for (let issueIndex = 0; issueIndex < counts.length; issueIndex++)
+    {
+      const issueName = rows[issueIndex].code_name
+      // mysql responses. they are arrays. first elem is the rows
+      const [issueCounts] = counts[issueIndex]
+      serverResponse[issueName] = JSON.parse(JSON.stringify(defaultCountResponse))
+
+      // copy the counts
+      for (const row of issueCounts)
+      {
+        const optionInfo = {
+          name: row.choice,
+          count: row['count(*)']
+        }
+        serverResponse[issueName].options.push(optionInfo)
+        // increment the total count
+        serverResponse[issueName].totalCount += optionInfo.count
+      }
     }
-    response.options.push(optionInfo)
-    // increment the total count
-    response.totalCount += optionInfo.count
-  }
 
-  const responseT = {
-    name: rows[0].code_name,
-    options: [
-      { name: 'yes', count: 3 },
-      { name: 'no', count: 4 }
-    ],
-    totalCount: 7
+    res.status(200).send(serverResponse)
   }
-
-  res.status(200).send(responseT)
+  catch (error)
+  {
+    log.error('Error is get counts request', error)
+    res.status(500).send()
+  }
 }
 
 async function getGovKeys (req, res, next)

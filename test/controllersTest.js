@@ -41,18 +41,39 @@ describe('Governmint Tests', () =>
     })
   })
 
-  describe('GET /issues/COMDOM', () =>
+  describe('GET /issues/:ids', () =>
   {
-    it('shoulde get issue counts', (done) =>
+    it('should get all the issues', (done) =>
     {
       request
-        .get('/issues/COMDOM')
-        .expect((res) =>
-        {
-          log.info('Response of issue counts', res.body)
-        })
+        .get('/issues')
         .expect(200)
+        .expect(res =>
+        {
+          const issueNames = Object.keys(res.body)
+          assert(issueNames.length > 0, 'No issues in response')
+          assert(res.body[issueNames[0]].options)
+          assert(typeof res.body[issueNames[0]].totalCount === 'number')
+        })
         .end(done)
+    })
+
+    it('should get issue with id "Danny Deckchair"', (done) =>
+    {
+      const issueName = 'Danny Deckchair'
+      request
+        .get(`/issues/${issueName}`)
+        .expect(200)
+        .expect(res =>
+        {
+          assert(res.body[issueName])
+        })
+        .end(done)
+    })
+
+    it('should return an empty object', (done) =>
+    {
+      done('Not implemented')
     })
   })
 })

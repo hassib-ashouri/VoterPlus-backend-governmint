@@ -43,9 +43,9 @@ function getIssues (codeName)
     q += 'and code_name = ? '
     inserts.push(codeName)
   }
-  else if (Array.isArray(codeName))
+  else if (Array.isArray(codeName) && codeName.length > 0)
   {
-    q += 'and code_name = (?) '
+    q += 'and code_name in (?) '
     inserts.push(codeName)
   }
 
