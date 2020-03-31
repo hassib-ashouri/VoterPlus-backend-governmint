@@ -264,7 +264,7 @@ async function verifyVoteConsideration (req, res, next)
     const vmKeys = new NodeRSA()
     vmKeys.importKey(vmInfo[0].pub_key_cert, 'pkcs1-public-pem')
     const recieptToVerify = `${receiptNum},${voteGuid},${vm},${timeStamp},${choice}`
-    const isRecieptGood = vmKeys.verify(recieptToVerify, signature, 'hex', 'hex')
+    const isRecieptGood = vmKeys.verify(recieptToVerify, signature, 'utf8', 'hex')
     if (!isRecieptGood)
     {
       throw new Error(BAD_RECIEPT_SIG)
