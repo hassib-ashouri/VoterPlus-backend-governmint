@@ -7,11 +7,13 @@ const NodeRSA = require('node-rsa')
 // Express server setup
 const cors = require('cors')
 const bodyParser = require('body-parser')
+const morgan = require('morgan')
 const app = require('express')()
 // json body parsing
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 app.use(cors())
+app.use(morgan('dev'))
 // http server
 const http = require('http')
 const server = http.createServer(app)
