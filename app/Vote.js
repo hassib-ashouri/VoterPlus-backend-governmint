@@ -81,8 +81,6 @@ class Vote
       this.govN = govN
       // gen key and nounces
       this._guid = utils.getNounce()
-      // i wounder if the key pair should be held by the user.
-      // TODO uncomment for crypto funcionts
       this._key = blindSigs.keyGeneration({ b: 512 })
       this.leftIdent = []
       this.rightIdent = []
@@ -91,7 +89,6 @@ class Vote
       // add pub key
       // add identification hashes
       this._voteStr = this._voteStr.replace(/NOUNCE/, this._guid)
-      // TODO uncomment for true functionality
         .replace(/E/, this.e)
         .replace(/N/, this.n)
         .replace(/LHASHES/, leftHashes.join('-'))

@@ -8,39 +8,43 @@ const getKeys = () => global.keys
 const VOTE_TEMPLATE = 'This is one voting right for:ISSUE,E,N,NOUNCE,LHASHES,RHASHES'
 const VOTE_FORMAT = /This is one voting right for:(.*),(.*),(.*),(.*),(.*),(.*)/
 const NUM_BLINDED_TEMPLATES = 10
+
 /**
-   *
-   * @param {Exp.request} req
-   * @param {Exp.response} res
-   * @param {*} next
-   */async function verifyVotersOnPost (req, res, next)
+ *
+ * @param {Exp.request} req
+ * @param {Exp.response} res
+ * @param {*} next
+  */
+async function verifyVotersOnPost (req, res, next)
 {
   const {
     issue,
     count,
     votes
   } = req.body
-  log.info('Recievd request to Verify Votes', { count, issue })
+  log.debug('POST /votes', { count, issue })
+  // error messages
+  const WRONG_TYPE_IN_REQ = 'Request body types are wrong'
+  const VOTE_COUNT_MISMATCH = `Votes does not match count. Array size ${votes.length}. Count ${count}.`
+  const ISSUE_NOT_FOUND = `Issue ${issue} was not found`
+  const NO_GOOD_VOTES = 'No Good votes to add'
   try
   {
     if (typeof issue !== 'string' || typeof count !== 'number' || !Array.isArray(votes))
     {
-      res.status(400).send({ err: 'Request body types are wrong' })
-      return
+      throw new Error(WRONG_TYPE_IN_REQ)
     }
     // match count with votes in an array
     if (count !== votes.length)
     {
-      res.status(400).send({ err: `Votes does not match count. Array size ${votes.length}. Count ${count}.` })
-      return
+      throw new Error(VOTE_COUNT_MISMATCH)
     }
 
     // check if the issue exists in the db and load valid choices
     const [rows, fields] = await db.getIssues(issue)
     if (rows.length !== 1)
     {
-      res.status(400).send({ err: `Issue ${issue} was not found` })
-      return
+      throw new Error(ISSUE_NOT_FOUND)
     }
 
     const options = rows[0].options
@@ -78,7 +82,6 @@ const NUM_BLINDED_TEMPLATES = 10
       const isGoodSig = blindSigs.verify({
         unblinded: signature,
         message: voteStr,
-        // TODO i might be able to just pass the key object
         key: getKeys()
       })
 
@@ -101,7 +104,7 @@ const NUM_BLINDED_TEMPLATES = 10
 
     if (goodVotes.length === 0)
     {
-      throw new Error('No Good votes to add')
+      throw new Error(NO_GOOD_VOTES)
     }
     // persist votes in db
     await db.insertVotes(goodVotes)
@@ -111,9 +114,18 @@ const NUM_BLINDED_TEMPLATES = 10
   }
   catch (error)
   {
-    // TODO better error handling here. pass the message in response
-    log.error('Problem with verifying votes request.\n', error)
-    res.status(500).send()
+    switch (error.message)
+    {
+      case WRONG_TYPE_IN_REQ:
+      case VOTE_COUNT_MISMATCH:
+      case ISSUE_NOT_FOUND:
+      case NO_GOOD_VOTES:
+        res.status(400).send({ err: error.message })
+        break
+      default:
+        log.error('Problem with verifying votes request.\n', error)
+        res.status(500).send()
+    }
   }
 }
 
@@ -125,23 +137,34 @@ async function onTestReq (req, res, next)
 // POST /getIssues
 async function getSupportedIssuesasync (req, res, next)
 {
-  // TODO log request
   const ssn = req.body.ssn
-
-  // db operation to get issues
-  const [rows, fields] = await db.getVoters(ssn)
-  // if no voters found with the ssn
-  if (rows.length === 0)
+  const BAD_SSN = 'No issues to vote on.'
+  log.debug('POST /getIssues', { ssn })
+  try
   {
-    // TODO message like "invalid ssn" without revealing to much info
-    res.status(404).send()
-    return
-  }
+    // db operation to get issues
+    const [rows] = await db.getVoters(ssn)
+    // if no voters found with the ssn
+    if (rows.length === 0)
+    {
+      throw new Error(BAD_SSN)
+    }
 
-  // get the issues that have not been voted on
-  const issues = Object.keys(rows[0].can_vote_on).filter(issue => rows[0].can_vote_on[issue].sig === null)
-  log.info('Got a request for issues')
-  res.status(200).send(issues)
+    // get the issues that have not been voted on
+    const issues = Object.keys(rows[0].can_vote_on).filter(issue => rows[0].can_vote_on[issue].sig === null)
+    res.status(200).send(issues)
+  }
+  catch (error)
+  {
+    switch (error.message)
+    {
+      case BAD_SSN:
+        res.status(404).send()
+        break
+      default:
+        res.status(500).send({ err: error.message })
+    }
+  }
 }
 
 // GET /issues/:id
@@ -155,7 +178,7 @@ async function getIssuesCounts (req, res, next)
 
   try
   {
-    const [rows, fields] = await db.getIssues(codes)
+    const [rows] = await db.getIssues(codes)
       .catch(reason =>
       {
         const err = new Error('Error getting issues' + reason)
@@ -196,8 +219,12 @@ async function getIssuesCounts (req, res, next)
   }
   catch (error)
   {
-    log.error('Error is get counts request', error)
-    res.status(500).send()
+    switch (error.message)
+    {
+      default:
+        log.error('Error is get counts request', error)
+        res.status(500).send()
+    }
   }
 }
 
@@ -254,150 +281,140 @@ async function verifyVoteConsideration (req, res, next)
   }
   catch (error)
   {
-    if (error.message === BAD_RECIEPT_SIG)
+    switch (error.message)
     {
-      log.debug(error.message, { voteGuid, issue, choice })
-      res.status(401).send({ err: error.message })
-    }
-    else if (error.message === VOTE_NOT_FOUND)
-    {
-      log.debug(error.message, { voteGuid, issue, choice })
-      res.status(404).send({ err: error.message })
-    }
-    else if (error.message === VM_NOT_FOUND)
-    {
-      log.debug(error.message, { vm })
-      res.status(404).send({ err: error.message })
-    }
-    else
-    {
-      log.error(error.message, error)
-      res.status(500).send()
+      case BAD_RECIEPT_SIG:
+        log.debug(error.message, { voteGuid, issue, choice })
+        res.status(401).send({ err: error.message })
+        break
+      case VOTE_NOT_FOUND:
+      case VM_NOT_FOUND:
+        log.debug(error.message, { vm, voteGuid, issue, choice })
+        res.status(404).send({ err: error.message })
+        break
+      default:
+        log.error(error.message, error)
+        res.status(500).send({ err: error.message })
     }
   }
 }
 
 function socketOnConnect (socket)
 {
-  // TODO fix log messages in this function
-  console.log('New socket connected', socket.id)
-  // TODO test whether I need to pass the socket
+  log.debug('New socket connected', { id: socket.id })
+  // assign proper controllers
   socket.on('template_acquisition', getVoteTempelate(socket))
-
   socket.on('blind_sig_select', processVotesHashes(socket))
-
   socket.on('blind_sig_reveal', verifyAndSign(socket))
 
   // log disconnection
   socket.on('disconnect', () =>
   {
-    console.log('socket', socket.id, 'disconnected')
+    log.debug('Socket disconnected', { id: socket.id })
   })
 }
 
 function getVoteTempelate (socket)
 {
-  // TODO fix log messages. not console log
   return async (args) =>
   {
-    log.info(`Recieved a request for a tempelate. Arguments ${JSON.stringify(args)}`)
     // destructure needed data
     const {
       ssn,
       issue
     } = args
-    // the response to send to client
-    let response
-    // can voter vote
-    const [rows, fields] = await db.getVoters(ssn)
-    // db problem
-    if (rows.length > 1)
+    log.debug('Recieved a request for a tempelate. Arguments', { ssn, issue })
+    const USER_NOT_UNIQUE = `During template_aquisition. More than one user with ssn ${ssn}`
+    const USER_NOT_FOUND = `During template_aquisition. User with ssn ${ssn} not found`
+    const VOTER_CANNOT_VOTE = `Voter ${ssn} cannot vote on ${issue}`
+    const ISSUE_NOT_FOUND = `During template_aquisition. Issue with id ${issue} not found.`
+    const ALREADY_IN_PROGRESS = 'Voter more than one vote at the same time. Try again in 3 mins'
+    try
     {
-      const error = new Error(`
-      During template_aquisition
-      More than one user with ssn ${ssn}`)
-      log.error(error.message)
-      throw error
-      // TODO exit method here
-    }
-    else if (rows.length === 0)
-    { // user not found
-      const error = new Error(`
-      During template_aquisition
-      User with ssn ${ssn} not found`)
-      log.error(error.message)
-      response = {
-        err: error.message
-      }
-      socket.emit('template_acquisition_response', response)
-      return
-    }
-
-    // user found
-    // check if voter can vote
-    const canVoteOn = rows[0].can_vote_on
-    if (canVoteOn[issue] && canVoteOn[issue].sig !== null)
-    {
-      const error = new Error(`Voter ${ssn} cannot vote on ${issue}`)
-      response = {
-        err: error.message
-      }
-      socket.emit('template_acquisition_response', response)
-      return
-    }
-
-    // get the issues
-    // TODO streamline whether the issue should be an id
-    const [rows2, fields2] = await db.getIssues(issue)
-    // wront issue name
-    if (rows2.length === 0)
-    {
-      const error = new Error(`
-      During template_aquisition
-      Issue with id ${issue} not found`)
-      log.error(error.message)
-      response = {
-        err: error.message
-      }
-      socket.emit('template_acquisition_response', response)
-      return
-    }
-
-    const issueName = rows2[0].code_name
-    // check if user received a template before
-    const dbRecordsForUser = await db.getTemplateAquisitionStage(ssn, issue)
-    // user has requested more than once
-    if (dbRecordsForUser !== 0)
-    {
-      log.info(`User ${ssn} has requested a template more that once`)
-    }
-    // is a valid issue
-    response = {
-      template: VOTE_TEMPLATE.replace(/ISSUE/, issueName),
-      quantity: NUM_BLINDED_TEMPLATES
-    }
-    // send the tempelate back
-    socket.emit('template_acquisition_response', response)
-    // persiste that i gave user template
-    await db.insertTemplateAquisition(ssn, issue, response.template)
-      .catch(reason =>
+      // can voter vote
+      const [rows] = await db.getVoters(ssn)
+      // db problem
+      if (rows.length > 1)
       {
-        log.error(`Problem inserting template for ${ssn} issue ${issue}`)
-        log.error(reason.message)
-      })
-    log.info('Processed request of template sucessfully', { ssn: ssn, issue: issue, template: response.template })
+        const error = new Error(USER_NOT_UNIQUE)
+        throw error
+      }
+      else if (rows.length === 0)
+      { // user not found
+        const error = new Error(USER_NOT_FOUND)
+        throw error
+      }
+      // user found
+      // check if voter can vote
+      const canVoteOn = rows[0].can_vote_on
+      if (canVoteOn[issue] && canVoteOn[issue].sig !== null)
+      {
+        const error = new Error(VOTER_CANNOT_VOTE)
+        throw error
+      }
+      // get the issues
+      // TODO streamline whether the issue should be an id
+      const [rows2] = await db.getIssues(issue)
+      // wront issue name
+      if (rows2.length === 0)
+      {
+        const error = new Error(ISSUE_NOT_FOUND)
+        throw error
+      }
+      const issueName = rows2[0].code_name
+      // check if user received a template before
+      const dbRecordsForUser = await db.getTemplateAquisitionStage(ssn, issueName)
+      // user has requested more than once
+      if (dbRecordsForUser !== 0)
+      {
+        const error = new Error(ALREADY_IN_PROGRESS)
+        throw error
+      }
+      // is a valid issue
+      const response = {
+        template: VOTE_TEMPLATE.replace(/ISSUE/, issueName),
+        quantity: NUM_BLINDED_TEMPLATES
+      }
+      // persiste that i gave user template
+      await db.insertTemplateAquisition(ssn, issue, response.template)
+        .catch(reason =>
+        {
+          log.error('Problem updating pipeline state', { ssn, issue })
+          const error = new Error(reason.message)
+          throw error
+        })
+        // send the tempelate back
+      socket.emit('template_acquisition_response', response)
+      log.debug('Processed request of template sucessfully', { ssn: ssn, issue: issue, template: response.template })
+    }
+    catch (error)
+    {
+      switch (error.message)
+      {
+        case ALREADY_IN_PROGRESS:
+          socket.emit('template_acquisition_response', { err: error.message })
+          // remove everything from the pipeline
+          await db.removeFromInProgress(ssn, issue)
+          break
+        case USER_NOT_UNIQUE:
+        case USER_NOT_FOUND:
+        case VOTER_CANNOT_VOTE:
+        case ISSUE_NOT_FOUND:
+        default:
+          socket.emit('template_acquisition_response', { err: error.message })
+      }
+    }
   }
 }
 
 function processVotesHashes (socket)
 {
-  // TODO fix log messages
   return async ({ ssn, issue, blindVoteHashes }) =>
   {
-    log.info(`Recieved blind vote hashes for ${ssn} ${issue}`)
+    log.debug('Recieved blind vote hashes', { ssn, issue })
     // generate a random number to select
     const selected = parseInt(Math.random() * NUM_BLINDED_TEMPLATES)
-    log.info('selected a template with index ' + selected)
+    log.debug('Selected a template with index ', { selected, ssn, issue })
     try
     {
       // persist the hashes in a mongo
@@ -415,60 +432,75 @@ function processVotesHashes (socket)
 
 function verifyAndSign (socket)
 {
-  // TODO fix log messages
   return async ({ ssn, issue, bFactors, rawVotes, hashedVotes }) =>
   {
-    log.info(`Recieved the revealed data about the votes for ${ssn} ${issue}`)
-
-    const blindVoteHashes = await db.getVoteHashes(ssn, issue)
-    log.info('Db dum of vote hashes from mongodb', blindVoteHashes)
-    if (blindVoteHashes.length > 1 || blindVoteHashes.length === 0)
+    log.debug(`Recieved the revealed data about the votes for ${ssn} ${issue}`)
+    const VOTE_REQUESTED_BEFORE = 'User has submitted before'
+    const VOTE_DOC_CANNOT_BE_VERIFIED = 'One of more of vote documents cannot be verified'
+    try
     {
-      throw new Error('User has more than one submission of')
-      // TODO exit and return response
-    }
-    const {
-      ssn: savedSSN,
-      issue: savedIssue,
-      stages: {
-        blind_sig_select: {
-          hashes,
-          selected: savedSELECTED
+      const blindVoteHashes = await db.getVoteHashes(ssn, issue)
+      if (blindVoteHashes.length > 1 || blindVoteHashes.length === 0)
+      {
+        throw new Error(VOTE_REQUESTED_BEFORE)
+      }
+      const {
+        ssn: savedSSN,
+        issue: savedIssue,
+        stages: {
+          blind_sig_select: {
+            hashes,
+            selected: savedSELECTED
+          }
         }
-      }
-    } = blindVoteHashes
-    // sign
-    hashes.forEach((bVoteHash, i) =>
+      } = blindVoteHashes
+      // sign
+      hashes.forEach((bVoteHash, i) =>
+      {
+        // No blinding factor is expected for the selected identity.
+        if (i === savedSELECTED) return
+        if (!utils.verifyContents(utils.hash(bVoteHash), bFactors[i], hashedVotes[i], rawVotes[i], VOTE_FORMAT))
+        {
+          throw new Error(VOTE_DOC_CANNOT_BE_VERIFIED)
+        }
+      })
+      // If we made it here, all looked good.
+      // Return the signed vote to the voter.
+      const signedVote = blindSigs.sign({
+        blinded: hashes[savedSELECTED],
+        key: getKeys()
+      }).toString()
+      // remove voter from in progress pipeline
+      await db.removeFromInProgress(ssn, issue)
+        .catch(reason =>
+        {
+          log.error('Problem removing state from pipeline')
+          const error = new Error(reason.message)
+          throw error
+        })
+        // mark in sql that the user voted
+      await db.markIssueVotedOnForUser(ssn, issue, signedVote)
+        .catch(reason =>
+        {
+          log.error('Problem marking issue voted in mysql', { ssn, issue })
+          const error = new Error(reason.message)
+          throw error
+        })
+      socket.emit('blind_sig_reveal_response', { signature: signedVote })
+      log.debug('Sent signed voting right', { ssn, issue })
+    }
+    catch (error)
     {
-      // No blinding factor is expected for the selected identity.
-      if (i === savedSELECTED) return
-      if (!utils.verifyContents(utils.hash(bVoteHash), bFactors[i], hashedVotes[i], rawVotes[i], VOTE_FORMAT))
+      switch (error.message)
       {
-        throw new Error(`Document ${rawVotes[i]} is invalid`)
-        // TODO exit with response and error
+        case VOTE_REQUESTED_BEFORE:
+        case VOTE_DOC_CANNOT_BE_VERIFIED:
+        default:
+          log.error(error.message)
+          await db.removeFromInProgress(ssn, issue)
+          socket.emit('blind_sig_reveal_response', { err: 'There is a problem processing your voting right. Try again' })
       }
-    })
-
-    // If we made it here, all looked good.
-    // Return the signed vote to the voter.
-    const signedVote = blindSigs.sign({
-      blinded: hashes[savedSELECTED],
-      key: getKeys()
-    }).toString()
-    log.info(`Sent right to vote for ${ssn} issue ${issue}`)
-    socket.emit('blind_sig_reveal_response', { signature: signedVote })
-    // remove voter from in progress pipeline
-    await db.removeFromInProgress(ssn, issue)
-      .catch(reason =>
-      {
-        log.error(`Problem remove from in hot data\n${reason.stack}`)
-      })
-    // mark in sql that the user voted
-    await db.markIssueVotedOnForUser(ssn, issue, signedVote)
-      .catch(reason =>
-      {
-        log.error(`Problem marking issue voted on for user ${ssn}\n${reason.stack}`)
-      })
+    }
   }
 }
 

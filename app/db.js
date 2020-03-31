@@ -266,7 +266,7 @@ function removeFromInProgress (ssn, issue)
   {
     dbExecuter(async (db) =>
     {
-      await db.collection(votesInProgress).deleteOne({ ssn: { $eq: ssn }, issue: { $eq: issue } })
+      await db.collection(votesInProgress).deleteMany({ ssn: { $eq: ssn }, issue: { $eq: issue } })
         .catch(reason =>
         {
           reject(reason)
