@@ -31,6 +31,8 @@ app.get('/', controllers.onTestReq)
 
 app.post('/getIssues', controllers.getSupportedIssuesasync)
 app.post('/votes', controllers.verifyVotersOnPost)
+// order matters here
+app.get('/issues/vm', controllers.getIssuesMeta)
 app.get('/issues/:ids', controllers.getIssuesCounts)
 app.get('/issues', controllers.getIssuesCounts)
 app.post('/verifyCount', controllers.verifyVoteConsideration)

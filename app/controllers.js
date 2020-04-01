@@ -181,6 +181,27 @@ async function getSupportedIssuesasync (req, res, next)
   }
 }
 
+async function getIssuesMeta (req, res, next)
+{
+  try
+  {
+    const [issues] = await db.getIssues()
+    const response = issues.map(({
+      id,
+      code_name,
+      description,
+      deadline,
+      options
+    }) => ({ id, name: code_name, description, deadline, options }))
+    res.status(200).send(response)
+  }
+  catch (error)
+  {
+    log.error('Error in getting meta data about issues ', error)
+    res.status(500).send({ err: error.message })
+  }
+}
+
 // GET /issues/:id
 async function getIssuesCounts (req, res, next)
 {
@@ -528,5 +549,6 @@ module.exports = {
   socketOnConnect,
   getIssuesCounts,
   getGovKeys,
-  verifyVoteConsideration
+  verifyVoteConsideration,
+  getIssuesMeta
 }

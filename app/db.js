@@ -120,7 +120,8 @@ function executeQuery (query, inserts)
   /**
    * @type {Pool}
    */
-  const promPool = global.mysqlDb.promise()
+  const pool = global.mysqlDb
+  const promPool = pool.promise()
   return promPool.query(query, inserts)
 }
 

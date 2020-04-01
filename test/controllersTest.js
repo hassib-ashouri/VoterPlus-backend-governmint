@@ -97,4 +97,28 @@ describe('Governmint Tests', () =>
       done('Not implimented')
     })
   })
+
+  describe('GET /issues/vm', () =>
+  {
+    it('should get a list of issues', (done) =>
+    {
+      request
+        .get('/issues/vm')
+        .expect(200)
+        .expect(({ body }) =>
+        {
+          assert(Array.isArray(body))
+          assert(body[0].name)
+          assert(body[0].description)
+          assert(body[0].deadline)
+          assert(body[0].options)
+          assert(Array.isArray(body[0].options))
+        })
+        .end((err, res) =>
+        {
+          if (err) log.error('Error in getting issue meta data', { body: res.body })
+          done(err)
+        })
+    })
+  })
 })
