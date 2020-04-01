@@ -17,6 +17,7 @@ const NUM_BLINDED_TEMPLATES = 10
   */
 async function verifyVotersOnPost (req, res, next)
 {
+  // TODO consider sending vm id as well
   const {
     issue,
     count,
@@ -73,17 +74,18 @@ async function verifyVotersOnPost (req, res, next)
       if (guid in votesOnThisIssueSoFar)
       {
         // TODO launch dublicate detection logic using the new and persisted ris
-        const [prevVote] = db.getVotes(undefined, undefined, guid)
+        const [prevVote] = await db.getVotes(undefined, undefined, guid)
 
         const prevRis = prevVote[0].ris
         try
         {
           const cheeterIden = utils.revealCheater(ris, prevRis, 'This is one voting right for ')
-          log.info('Identified cheeter:', { cheeterIden })
+          log.info('Identified cheater:', { cheeterIden })
+          // TODO add some logic for identified cheater
         }
         catch (error)
         {
-          log.error('Dublicate vote detected. Was not able to identify cheeter', { guid })
+          log.error('Dublicate vote detected. Was not able to identify cheater', { guid })
         }
         continue
       }
