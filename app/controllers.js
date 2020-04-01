@@ -72,10 +72,22 @@ async function verifyVotersOnPost (req, res, next)
       // check for dubs
       if (guid in votesOnThisIssueSoFar)
       {
-        log.error('Dublicate vote detected', { guid })
         // TODO launch dublicate detection logic using the new and persisted ris
+        const [prevVote] = db.getVotes(undefined, undefined, guid)
+
+        const prevRis = prevVote[0].ris
+        try
+        {
+          const cheeterIden = utils.revealCheater(ris, prevRis, 'This is one voting right for ')
+          log.info('Identified cheeter:', { cheeterIden })
+        }
+        catch (error)
+        {
+          log.error('Dublicate vote detected. Was not able to identify cheeter', { guid })
+        }
         continue
       }
+      // TODO verify length of ris array
 
       // verify sig
       log.debug('Processing a vote.')
