@@ -54,6 +54,8 @@ describe('Governmint Tests', () =>
           const issueNames = Object.keys(res.body)
           assert(issueNames.length > 0, 'No issues in response')
           assert(res.body[issueNames[0]].options)
+          assert(res.body[issueNames[0]].options.length > 0)
+          assert(Array.isArray(res.body[issueNames[0]].options))
           assert(typeof res.body[issueNames[0]].totalCount === 'number')
         })
         .end(done)
@@ -74,7 +76,18 @@ describe('Governmint Tests', () =>
 
     it('should return an empty object', (done) =>
     {
-      done('Not implemented')
+      request
+        .get('/issues/junk')
+        .expect(200)
+        .expect(res =>
+        {
+          assert(Object.keys(res.body).length === 0)
+        })
+        .end((err, res) =>
+        {
+          if (err) log.debug('body of bad request', { body: res.body })
+          done(err)
+        })
     })
   })
 

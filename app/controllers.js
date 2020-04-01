@@ -229,24 +229,26 @@ async function getIssuesCounts (req, res, next)
         throw err
       })
     const serverResponse = {}
-    const defaultCountResponse = { options: [], totalCount: 0 }
     for (let issueIndex = 0; issueIndex < counts.length; issueIndex++)
     {
+      // default object for issue before counting votes
+      const defaultCountResponse = {
+        options: rows[issueIndex].options.map(option => ({ name: option, count: 0 })),
+        totalCount: 0
+      }
+      // issue name to be used as a key
       const issueName = rows[issueIndex].code_name
       // mysql responses. they are arrays. first elem is the rows
       const [issueCounts] = counts[issueIndex]
-      serverResponse[issueName] = JSON.parse(JSON.stringify(defaultCountResponse))
+      serverResponse[issueName] = defaultCountResponse
 
       // copy the counts
       for (const row of issueCounts)
       {
-        const optionInfo = {
-          name: row.choice,
-          count: row['count(*)']
-        }
-        serverResponse[issueName].options.push(optionInfo)
+        const currentOption = defaultCountResponse.options.find(({ name }) => name === row.choice)
+        currentOption.count = row['count(*)']
         // increment the total count
-        serverResponse[issueName].totalCount += optionInfo.count
+        serverResponse[issueName].totalCount += currentOption.count
       }
     }
 
