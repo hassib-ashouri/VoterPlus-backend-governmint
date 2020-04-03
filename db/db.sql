@@ -57,6 +57,15 @@ INSERT INTO issue VALUES (UUID_SHORT(), 'COMDOM', '','["yes","optiona"]', '2020-
 -- reset all issues from users
 -- had to be done this way to get around safe mode guards
 -- safe mode wont allow update statements without where clause that uses one of the key attributes
-update voter 
-set can_vote_on = "{""COMDOM"": {""sig"": null, ""timestamp"": null}}"
-where ssn > 100000000;
+DELIMITER //
+ 
+CREATE PROCEDURE resetDb()
+BEGIN
+    update voter 
+    set can_vote_on = "{""COMDOM"": {""sig"": null, ""timestamp"": null}}"
+    where ssn > 100000000;
+    -- delete all rows
+    delete from vote
+END //
+ 
+DELIMITER ;

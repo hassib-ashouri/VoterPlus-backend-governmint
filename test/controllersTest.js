@@ -22,6 +22,7 @@ describe('Governmint Tests', () =>
     this.timeout(15000)
     const app = await require('../app/server')
     request = supertest(app)
+    global.mysqlDb.promise().query('Call resetDb();')
   })
 
   describe('POST /votes', () =>
