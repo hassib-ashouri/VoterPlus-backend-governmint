@@ -81,11 +81,14 @@ async function verifyVotersOnPost (req, res, next)
         {
           const cheeterIden = utils.revealCheater(ris, prevRis, 'This is one voting right for ')
           log.info('Identified cheater:', { cheeterIden })
-          // TODO add some logic for identified cheater
+          const ssn = cheeterIden.split(':')[1]
+          const issue = voteStr.split(':')[1].split(',')[0]
+          await db.markMiliciousVoter(ssn, issue)
         }
         catch (error)
         {
-          log.error('Dublicate vote detected. Was not able to identify cheater', { guid })
+          log.error('problem with cheater identification', { guid })
+          log.error(error.stack)
         }
         continue
       }
