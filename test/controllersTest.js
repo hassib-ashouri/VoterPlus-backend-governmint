@@ -58,6 +58,8 @@ describe('Governmint Tests', () =>
           assert(res.body[issueNames[0]].options.length > 0)
           assert(Array.isArray(res.body[issueNames[0]].options))
           assert(typeof res.body[issueNames[0]].totalCount === 'number')
+          assert(typeof res.body[issueNames[0]].deadline === 'string')
+          assert(new Date(res.body[issueNames[0]].deadline), 'parsable into a date obj')
         })
         .end(done)
     })

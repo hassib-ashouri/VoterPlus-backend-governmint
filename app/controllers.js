@@ -234,7 +234,8 @@ async function getIssuesCounts (req, res, next)
       // default object for issue before counting votes
       const defaultCountResponse = {
         options: rows[issueIndex].options.map(option => ({ name: option, count: 0 })),
-        totalCount: 0
+        totalCount: 0,
+        deadline: rows[issueIndex].deadline
       }
       // issue name to be used as a key
       const issueName = rows[issueIndex].code_name
