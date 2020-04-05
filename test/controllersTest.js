@@ -1,8 +1,9 @@
 'use strict'
-/* global describe, it, before */
+/* global describe, it, before, after */
 const assert = require('assert')
 const log = require('../app/logger')
 const votesToVerifyRequset = require('./votesToVerifyRequest')
+const votesToVerifyRequset2 = require('./votesToVerifyRequest2')
 const recieptObject = require('./VoteReciept')
 const supertest = require('supertest')
 let request
@@ -25,6 +26,11 @@ describe('Governmint Tests', () =>
     await global.mysqlDb.promise().query('Call resetDb();')
   })
 
+  after(async function resetDb ()
+  {
+    await global.mysqlDb.promise().query('Call resetDb();')
+  })
+
   describe('POST /votes', () =>
   {
     const req = votesToVerifyRequset
@@ -34,6 +40,19 @@ describe('Governmint Tests', () =>
       request
         .post('/votes')
         .send(req)
+        .expect(res =>
+        {
+          log.info('Response to verifying votes', res.body)
+        })
+        .expect(201)
+        .end(done)
+    })
+
+    it('should process votes', (done) =>
+    {
+      request
+        .post('/votes')
+        .send(votesToVerifyRequset2)
         .expect(res =>
         {
           log.info('Response to verifying votes', res.body)
@@ -97,7 +116,7 @@ describe('Governmint Tests', () =>
   describe('POST /verifyCount', () =>
   {
     const requestBody = {
-      reciept: recieptObject
+      receipt: recieptObject
     }
     it('should verify correctly signed reciept', (done) =>
     {
