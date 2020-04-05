@@ -72,6 +72,7 @@ BEGIN
     where ssn > 100000000;
     -- delete all rows
     delete from vote;
+    delete from milicious;
 END //
  
 DELIMITER ;
