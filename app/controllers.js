@@ -276,7 +276,7 @@ async function verifyVoteConsideration (req, res, next)
 {
   log.debug('POST /verifyCount', req.body)
   const {
-    reciept: {
+    receipt: {
       receiptNum,
       signature,
       voteGuid,
@@ -287,7 +287,7 @@ async function verifyVoteConsideration (req, res, next)
     }
   } = req.body
   // error messages
-  const BAD_RECIEPT_SIG = 'Cannot verify reciept signature'
+  const BAD_RECIEPT_SIG = 'Cannot verify receipt signature'
   const VM_NOT_FOUND = 'Vote machine not found'
   const VOTE_NOT_FOUND = 'Vote not found'
   try
