@@ -336,6 +336,55 @@ async function verifyVoteConsideration (req, res, next)
   }
 }
 
+async function getVoters (req, res, next)
+{
+  const {
+    query: {
+      limit = 10,
+      offset = 0,
+      type = 'all'
+    }
+  } = req
+  // error messages
+  const NOT_IMPLIMENTED = 'Not implimented'
+  try
+  {
+    let voters = []
+    if (type === 'all')
+    {
+      throw new Error(NOT_IMPLIMENTED)
+    }
+    else if (type === 'milicious')
+    {
+      const [rows] = await db.getMiliciousVoters(limit, offset)
+      // consume db response
+      const response = rows.map(({
+        fname,
+        lname,
+        ssn,
+        issue_code_name
+      }) => ({
+        fullName: `${fname} ${lname}`,
+        ssn,
+        issue: issue_code_name
+      }))
+      // assign to actual response varaible
+      voters = response
+    }
+    // unrecognized types will return an empty array
+    res.status(200).send(voters)
+  }
+  catch (error)
+  {
+    switch (error.message)
+    {
+      default:
+        res.status(500).send({ err: error.message })
+    }
+    log.error(error.stack)
+  }
+}
+
 function socketOnConnect (socket)
 {
   log.debug('New socket connected', { id: socket.id })
@@ -552,5 +601,6 @@ module.exports = {
   getIssuesCounts,
   getGovKeys,
   verifyVoteConsideration,
-  getIssuesMeta
+  getIssuesMeta,
+  getVoters
 }

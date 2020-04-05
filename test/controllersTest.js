@@ -135,4 +135,28 @@ describe('Governmint Tests', () =>
         })
     })
   })
+
+  describe('GET /admin/voters?type=milicious', () =>
+  {
+    it('should return a list of milicious voters', (done) =>
+    {
+      request
+        .get('/admin/voters?type=milicious')
+        .expect(200)
+        .expect(({ body }) =>
+        {
+          assert(Array.isArray(body))
+          assert(body.length > 0, 'Should have at lease one milicious voter')
+          const miliciousVoter = body[0]
+          assert(miliciousVoter.fullName)
+          assert(miliciousVoter.issue)
+          assert(miliciousVoter.ssn)
+        })
+        .end((err, res) =>
+        {
+          if (err) log.debug('problem getting milicious votes', res.body)
+          done(err)
+        })
+    })
+  })
 })

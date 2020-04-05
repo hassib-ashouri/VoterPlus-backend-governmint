@@ -28,7 +28,6 @@ CREATE TABLE vote (
     choice VARCHAR(50),
     ris JSON,
     vote TEXT,
-
     sig TEXT,
     receipt VARCHAR(320),
     PRIMARY KEY (guid)
@@ -50,22 +49,29 @@ CREATE TABLE vm (
     PRIMARY KEY (id)
 );
 
+CREATE table milicious(
+    ssn INT,
+    issue_code_name VARCHAR(50),
+    Constraint Foreign Key fk_milicious_to_issue_code (issue_code_name) references issue (code_name),
+    Constraint Foreign Key fk_milicious_to_ssn (ssn) references voter (ssn)
+);
+
 INSERT INTO issue VALUES (UUID_SHORT(), 'prop_44', '','["yes","no"]', '2020-12-12');
 INSERT INTO issue VALUES (UUID_SHORT(), 'COMDOM', '','["yes","optiona"]', '2020-12-12');
 
 
--- reset all issues from users
--- had to be done this way to get around safe mode guards
--- safe mode wont allow update statements without where clause that uses one of the key attributes
 DELIMITER //
  
 CREATE PROCEDURE resetDb()
 BEGIN
+    -- reset all issues from users
+    -- had to be done this way to get around safe mode guards
+    -- safe mode wont allow update statements without where clause that uses one of the key attributes
     update voter 
     set can_vote_on = "{""COMDOM"": {""sig"": null, ""timestamp"": null}}"
     where ssn > 100000000;
     -- delete all rows
-    delete from vote
+    delete from vote;
 END //
  
 DELIMITER ;

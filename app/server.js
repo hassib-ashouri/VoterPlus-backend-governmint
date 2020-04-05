@@ -36,6 +36,7 @@ app.get('/issues/vm', controllers.getIssuesMeta)
 app.get('/issues/:ids', controllers.getIssuesCounts)
 app.get('/issues', controllers.getIssuesCounts)
 app.post('/verifyCount', controllers.verifyVoteConsideration)
+app.get('/admin/voters', controllers.getVoters)
 
 io.on('connection', controllers.socketOnConnect)
 

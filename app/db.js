@@ -115,6 +115,17 @@ function getVMInfo (id)
   return executeQuery(q, inserts)
 }
 
+function getMiliciousVoters (limit, offset)
+{
+  const q = `
+  Select *
+  from
+  (select * from milicious limit ?,?) as t1
+  join voter on (t1.ssn = voter.ssn)`
+  const inserts = [limit, offset]
+  return executeQuery(q, inserts)
+}
+
 function executeQuery (query, inserts)
 {
   /**
@@ -322,5 +333,6 @@ module.exports = {
   insertVotes,
   getIssueCount,
   markIssueVotedOnForUser,
-  getVMInfo
+  getVMInfo,
+  getMiliciousVoters
 }
