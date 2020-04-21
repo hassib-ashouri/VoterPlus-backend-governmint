@@ -1,0 +1,12 @@
+node_modules
+# log files
+combined.log
+error.log
+# keys
+pub.pem
+priv.pem
+# env file
+.envvv
+# linting files
+.eslintrc.json
+# no need for gitignore
