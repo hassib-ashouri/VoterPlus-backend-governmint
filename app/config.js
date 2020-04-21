@@ -1,20 +1,22 @@
 'use strict'
 const logger = require('./logger')
+const fs = require('fs')
 // load env vars
-const envVars = require('dotenv').config({
-  path: '.envvv'
-})
-if (envVars.error)
+const node_env = process.env.NODE_ENV || 'development'
+// only use the dotenv lib when in dev
+if (node_env === 'development')
 {
-  throw envVars.error
-}
-else
-{
-  logger.debug('Loaded env variables', envVars.parsed)
+  const envVars = require('dotenv').config({
+    path: `./.env.${node_env}`
+  })
+  if (envVars.error)
+  {
+    throw envVars.error
+  }
 }
 
-module.exports = {
-  govKey: process.env.GOV_KEY,
+const configs = {
+  govKey: process.env.GOV_KEY || fs.readFileSync('./priv.prem'),
   port: process.env.PORT || 4000,
   on: process.env.ON || 'localhost',
   mongoUrl: process.env.DB_URL,
@@ -29,3 +31,5 @@ module.exports = {
     queueLimit: 0
   }
 }
+logger.debug('Loaded env variables', configs)
+module.exports = configs

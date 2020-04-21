@@ -4,5 +4,5 @@ priv.pem
 .env
 combined.log
 error.log
-.envvv
+.env.*
 .replit
