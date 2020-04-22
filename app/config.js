@@ -16,7 +16,7 @@ if (node_env === 'development')
 }
 
 const configs = {
-  govKey: process.env.GOV_KEY || fs.readFileSync('./priv.prem'),
+  govKey: process.env.GOV_KEY || fs.readFileSync('./priv.pem', 'utf8'),
   port: process.env.PORT || 4000,
   on: process.env.ON || 'localhost',
   mongoUrl: process.env.DB_URL,
@@ -31,5 +31,7 @@ const configs = {
     queueLimit: 0
   }
 }
+
 logger.debug('Loaded env variables', configs)
-module.exports = configs
+
+module.exports = { ...configs }
